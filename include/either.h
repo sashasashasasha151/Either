@@ -2,6 +2,32 @@
 
 #include <iostream>
 
+template<typename T>
+struct Left {
+    Left(T const &v) {
+        data = v;
+    }
+
+    Left(T &&v) {
+        data = std::move(v);
+    }
+
+    T data;
+};
+
+template<typename T>
+struct Right {
+    Right(T const &v) {
+        data = v;
+    }
+
+    Right(T &&v) {
+        data = std::move(v);
+    }
+
+    T data;
+};
+
 template<typename L, typename R>
 class Either {
     union {
@@ -110,13 +136,51 @@ public:
         return *this;
     }
 
+    Either(const Left<L> &other) {
+        left = other.data;
+        bl = true;
+    }
+
+    Either<L, R> &operator=(const Left<L> &other) {
+        left = other.data;
+        bl = true;
+    };
+
+    Either(const Right<R> &other) {
+        right = other.data;
+        br = true;
+    }
+
+    Either<L, R> &operator=(const Right<R> &other) {
+        right = other.data;
+        br = true;
+    };
+
+    Either(Left<L> &&other) {
+        left = std::move(other.data);
+        bl = true;
+    }
+
+    Either<L, R> &operator=(Left<L> &&other) {
+        left = std::move(other.data);
+        bl = true;
+    };
+
+    Either(Right<R> &&other) {
+        right = std::move(other.data);
+        br = true;
+    }
+
+    Either<L, R> &operator=(Right<R> &&other) {
+        right = std::move(other.data);
+        br = true;
+    };
+
     ~Either() {
         if (bl) {
             left.~L();
-            bl = false;
         } else {
             right.~R();
-            br = false;
         }
     }
 
@@ -143,24 +207,4 @@ public:
             throw std::runtime_error("No right element!");
         }
     }
-};
-
-template<typename L, typename R = int>
-Either<L, R> Left(L const &l) {
-    return Either<L, R>(l);
-};
-
-template<typename L, typename R>
-Either<L, R> Right(R const &r) {
-    return Either<L, R>(r);
-};
-
-template<typename L, typename R>
-Either<L, R> Left(L &&l) {
-    return Either<L, R>(std::move(l));
-};
-
-template<typename L, typename R>
-Either<L, R> Right(R &&r) {
-    return Either<L, R>(std::move(r));
 };
