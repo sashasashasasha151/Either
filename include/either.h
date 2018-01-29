@@ -1,6 +1,8 @@
 #pragma once
 
 #include <iostream>
+#include <algorithm>
+#include <iterator>
 
 template<typename T>
 struct Left {
@@ -30,41 +32,45 @@ struct Right {
 
 template<typename L, typename R>
 class Either {
-    union {
-        L left;
-        R right;
-    };
+    char data[std::max(sizeof(L), sizeof(R))];
+    L *left = nullptr;
+    R *right = nullptr;
     bool bl = false;
     bool br = false;
 public:
 
     Either(L const &l) {
-        left = l;
+        left = (L *) (&data);
+        *left = l;
         bl = true;
     }
 
     Either(R const &r) {
-        right = r;
+        right = (R *) (&data);
+        *right = r;
         br = true;
     }
 
     Either(L &&l) {
-        new(&left) L(std::move(l));
+        left = (L *) (&data);
+        new(&*left) L(std::move(l));
         bl = true;
     }
 
     Either(R &&r) {
-        new(&right) R(std::move(r));
+        right = (R *) (&data);
+        new(&*right) R(std::move(r));
         br = true;
     }
 
     Either(const Either<L, R> &other) {
+        std::copy(std::begin(other.data), std::end(other.data), std::begin(data));
         if (other.bl) {
             bl = true;
-            new(&left) L(other.left);
+            left = (L *) (&data);
         } else {
             br = true;
-            new(&right) R(other.right);
+            right = (R *) (&data);
         }
     }
 
@@ -72,35 +78,40 @@ public:
         if (this == &other) {
             return *this;
         }
+        std::copy(std::begin(other.data), std::end(other.data), std::begin(data));
         if (bl) {
             if (other.bl) {
-                left = other.left;
+                left = (L *) (&data);
             } else {
-                left.~L();
+                left = nullptr;
                 br = true;
                 bl = false;
-                new(&right) R(other.right);
+                right = (R *) (&data);
             }
         } else {
             if (other.br) {
-                right = other.right;
+                right = (R *) (&data);
             } else {
-                right.~R();
+                right = nullptr;
                 br = false;
                 bl = true;
-                new(&left) L(other.left);
+                left = (L *) (&data);
             }
         }
         return *this;
     }
 
     Either(Either<L, R> &&other) {
+        std::copy(std::begin(other.data), std::end(other.data), std::begin(data));
+        delete [] other.data;
         if (other.bl) {
-            new(&left) L(std::move(other.left));
+            left = (L *) (&data);
+            other.left = nullptr;
             other.bl = false;
             bl = true;
         } else {
-            new(&right) R(std::move(other.right));
+            right = (R *) (&data);
+            other.right = nullptr;
             other.br = false;
             br = true;
         }
@@ -110,26 +121,29 @@ public:
         if (this == &other) {
             return *this;
         }
+        std::copy(std::begin(other.data), std::end(other.data), std::begin(data));
         if (bl) {
             if (other.bl) {
-                left = std::move(other.left);
+                left = (L *) (&data);
+                other.left = nullptr;
                 other.bl = false;
             } else {
-                left.~L();
+                left = nullptr;
                 br = true;
                 bl = false;
-                new(&right) R(std::move(other.right));
+                right = (R *) (&data);
                 other.br = false;
             }
         } else {
             if (other.br) {
-                right = std::move(other.right);
+                right = (R *) (&data);
+                other.right = nullptr;
                 other.br = false;
             } else {
-                right.~R();
+                right = nullptr;
                 br = false;
                 bl = true;
-                new(&left) L(std::move(other.left));
+                left = (L *) (&data);
                 other.bl = false;
             }
         }
@@ -137,50 +151,59 @@ public:
     }
 
     Either(const Left<L> &other) {
-        left = other.data;
+        left = (L *) (&data);
+        *left = other.data;
         bl = true;
     }
 
     Either<L, R> &operator=(const Left<L> &other) {
-        left = other.data;
+        left = (L *) (&data);
+        *left = other.data;
         bl = true;
     };
 
     Either(const Right<R> &other) {
-        right = other.data;
+        right = (R *) (&data);
+        *right = other.data;
         br = true;
     }
 
     Either<L, R> &operator=(const Right<R> &other) {
-        right = other.data;
+        right = (R *) (&data);
+        *right = other.data;
         br = true;
     };
 
     Either(Left<L> &&other) {
-        left = std::move(other.data);
+        left = (L *) (&data);
+        *left = std::move(other.data);
         bl = true;
     }
 
     Either<L, R> &operator=(Left<L> &&other) {
-        left = std::move(other.data);
+        left = (L *) (&data);
+        *left = std::move(other.data);
         bl = true;
     };
 
     Either(Right<R> &&other) {
-        right = std::move(other.data);
+        right = (R *) (&data);
+        *right = std::move(other.data);
         br = true;
     }
 
     Either<L, R> &operator=(Right<R> &&other) {
-        right = std::move(other.data);
+        right = (R *) (&data);
+        *right = std::move(other.data);
         br = true;
     };
 
     ~Either() {
+        delete[] data;
         if (bl) {
-            left.~L();
+            left = nullptr;
         } else {
-            right.~R();
+            right = nullptr;
         }
     }
 
@@ -194,7 +217,7 @@ public:
 
     L &GetLeft() {
         if (bl) {
-            return left;
+            return *left;
         } else {
             throw std::runtime_error("No left element!");
         }
@@ -202,7 +225,7 @@ public:
 
     R &GetRight() {
         if (br) {
-            return right;
+            return *right;
         } else {
             throw std::runtime_error("No right element!");
         }
