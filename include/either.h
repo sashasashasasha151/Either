@@ -55,13 +55,14 @@ class Either {
     bool br = false;
 public:
     Either(const Either<L, R> &other) {
-        std::copy(std::begin(other.data), std::end(other.data), std::begin(data));
         if (other.bl) {
             bl = true;
             left = (L *) (&data);
+            *left = *other.left;
         } else {
             br = true;
             right = (R *) (&data);
+            *right = *other.right;
         }
     }
 
@@ -69,39 +70,43 @@ public:
         if (this == &other) {
             return *this;
         }
-        std::copy(std::begin(other.data), std::end(other.data), std::begin(data));
         if (bl) {
             if (other.bl) {
                 left = (L *) (&data);
+                *left = *other.left;
             } else {
                 left = nullptr;
                 br = true;
                 bl = false;
                 right = (R *) (&data);
+                *right = *other.right;
             }
         } else {
             if (other.br) {
                 right = (R *) (&data);
+                *right = *other.right;
             } else {
                 right = nullptr;
                 br = false;
                 bl = true;
                 left = (L *) (&data);
+                *left = *other.left;
             }
         }
         return *this;
     }
 
     Either(Either<L, R> &&other) {
-        std::copy(std::begin(other.data), std::end(other.data), std::begin(data));
         delete[] other.data;
         if (other.bl) {
             left = (L *) (&data);
+            *left = std::move(*other.left);
             other.left = nullptr;
             other.bl = false;
             bl = true;
         } else {
             right = (R *) (&data);
+            *right = std::move(*other.right);
             other.right = nullptr;
             other.br = false;
             br = true;
@@ -112,10 +117,10 @@ public:
         if (this == &other) {
             return *this;
         }
-        std::copy(std::begin(other.data), std::end(other.data), std::begin(data));
         if (bl) {
             if (other.bl) {
                 left = (L *) (&data);
+                *left = std::move(*other.left);
                 other.left = nullptr;
                 other.bl = false;
             } else {
@@ -123,11 +128,13 @@ public:
                 br = true;
                 bl = false;
                 right = (R *) (&data);
+                *right = std::move(*other.right);
                 other.br = false;
             }
         } else {
             if (other.br) {
                 right = (R *) (&data);
+                *right = std::move(*other.right);
                 other.right = nullptr;
                 other.br = false;
             } else {
@@ -135,6 +142,7 @@ public:
                 br = false;
                 bl = true;
                 left = (L *) (&data);
+                *left = std::move(*other.left);
                 other.bl = false;
             }
         }
