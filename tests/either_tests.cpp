@@ -34,20 +34,44 @@ TEST(either, Non_copy_type) {
     ASSERT_ANY_THROW(test_copy.GetLeft().Get());
 }
 
-//TEST(either, Non_move_type) {
-//    NoMove t;
-//    Either<NoMove, char> test_move = Left(t);
-//
-//    ASSERT_EQ(12,test_move.GetLeft().Get());
-//
-//    Either<NoMove, char> test_move1 = test_move;
-//
-//    ASSERT_EQ(12,test_move1.GetLeft().Get());
-//    ASSERT_EQ(12,test_move.GetLeft().Get());
-//}
+TEST(either, Non_move_type) {
+    NoMove t;
+    Either<NoMove, char> test_move = Left(t);
 
-//TEST(either, No_def_contructor) {
-//    NoDefConstructor n = NoDefConstructor(13);
-//    Either<NoDefConstructor, char> test_constr = Left(n);
-//    ASSERT_EQ(13,test_constr.GetLeft().Get());
-//}
+    ASSERT_EQ(12,test_move.GetLeft().Get());
+
+    Either<NoMove, char> test_move1 = test_move;
+
+    ASSERT_EQ(12,test_move1.GetLeft().Get());
+    ASSERT_EQ(12,test_move.GetLeft().Get());
+}
+
+TEST(either, No_def_contructor) {
+    NoDefConstructor n = NoDefConstructor(13);
+    Either<NoDefConstructor, char> test_constr = Left(n);
+    ASSERT_EQ(13,test_constr.GetLeft().Get());
+}
+
+TEST(either, Int_Int) {
+    Either<int, int> left = Left(10);
+    Either<int, int> right = Right(11);
+
+    ASSERT_TRUE(left.IsLeft());
+    ASSERT_FALSE(left.IsRight());
+    ASSERT_EQ(10,left.GetLeft());
+    ASSERT_ANY_THROW(left.GetRight());
+
+    ASSERT_FALSE(right.IsLeft());
+    ASSERT_TRUE(right.IsRight());
+    ASSERT_EQ(11,right.GetRight());
+    ASSERT_ANY_THROW(right.GetLeft());
+}
+
+TEST(either, Copy_left_to_right) {
+    Either<int, char> left = Left(12345);
+    Either<int, char> right = Right('c');
+    left = right;
+    ASSERT_TRUE(left.IsRight());
+    ASSERT_FALSE(left.IsLeft());
+    ASSERT_EQ('c',left.GetRight());
+}

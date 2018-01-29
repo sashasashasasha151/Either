@@ -7,27 +7,43 @@
 template<typename T>
 struct Left {
     Left(T const &v) {
-        data = v;
+        dt = (T *) (&data);
+        *dt = v;
     }
 
     Left(T &&v) {
-        data = std::move(v);
+        dt = (T *) (&data);
+        *dt = std::move(v);
     }
 
-    T data;
+    ~Left() {
+        dt = nullptr;
+        delete[] data;
+    }
+
+    char data[sizeof(T)];
+    T *dt = nullptr;
 };
 
 template<typename T>
 struct Right {
     Right(T const &v) {
-        data = v;
+        dt = (T *) (&data);
+        *dt = v;
     }
 
     Right(T &&v) {
-        data = std::move(v);
+        dt = (T *) (&data);
+        *dt = std::move(v);
     }
 
-    T data;
+    ~Right() {
+        dt = nullptr;
+        delete[] data;
+    }
+
+    char data[sizeof(T)];
+    T *dt = nullptr;
 };
 
 template<typename L, typename R>
@@ -38,31 +54,6 @@ class Either {
     bool bl = false;
     bool br = false;
 public:
-
-    Either(L const &l) {
-        left = (L *) (&data);
-        *left = l;
-        bl = true;
-    }
-
-    Either(R const &r) {
-        right = (R *) (&data);
-        *right = r;
-        br = true;
-    }
-
-    Either(L &&l) {
-        left = (L *) (&data);
-        new(&*left) L(std::move(l));
-        bl = true;
-    }
-
-    Either(R &&r) {
-        right = (R *) (&data);
-        new(&*right) R(std::move(r));
-        br = true;
-    }
-
     Either(const Either<L, R> &other) {
         std::copy(std::begin(other.data), std::end(other.data), std::begin(data));
         if (other.bl) {
@@ -103,7 +94,7 @@ public:
 
     Either(Either<L, R> &&other) {
         std::copy(std::begin(other.data), std::end(other.data), std::begin(data));
-        delete [] other.data;
+        delete[] other.data;
         if (other.bl) {
             left = (L *) (&data);
             other.left = nullptr;
@@ -151,51 +142,35 @@ public:
     }
 
     Either(const Left<L> &other) {
+        std::copy(std::begin(other.data), std::end(other.data), std::begin(data));
         left = (L *) (&data);
-        *left = other.data;
         bl = true;
     }
 
     Either<L, R> &operator=(const Left<L> &other) {
+        if (this == &other) {
+            return *this;
+        }
+        std::copy(std::begin(other.dt), std::end(other.dt), std::begin(data));
         left = (L *) (&data);
-        *left = other.data;
         bl = true;
+        return *this;
     };
 
     Either(const Right<R> &other) {
+        std::copy(std::begin(other.data), std::end(other.data), std::begin(data));
         right = (R *) (&data);
-        *right = other.data;
         br = true;
     }
 
     Either<L, R> &operator=(const Right<R> &other) {
+        if (this == &other) {
+            return *this;
+        }
+        std::copy(std::begin(other.data), std::end(other.data), std::begin(data));
         right = (R *) (&data);
-        *right = other.data;
         br = true;
-    };
-
-    Either(Left<L> &&other) {
-        left = (L *) (&data);
-        *left = std::move(other.data);
-        bl = true;
-    }
-
-    Either<L, R> &operator=(Left<L> &&other) {
-        left = (L *) (&data);
-        *left = std::move(other.data);
-        bl = true;
-    };
-
-    Either(Right<R> &&other) {
-        right = (R *) (&data);
-        *right = std::move(other.data);
-        br = true;
-    }
-
-    Either<L, R> &operator=(Right<R> &&other) {
-        right = (R *) (&data);
-        *right = std::move(other.data);
-        br = true;
+        return *this;
     };
 
     ~Either() {
