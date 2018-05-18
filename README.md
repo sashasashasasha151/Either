@@ -1,0 +1,1 @@
+An implementation of "Either" type C++
