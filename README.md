@@ -23,8 +23,6 @@ public:
 
     Either<L, R> &operator=(const Right<R> &other);
 
-    ~Either();
-
     bool IsLeft();
 
     bool IsRight();
