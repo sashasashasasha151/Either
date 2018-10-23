@@ -1,5 +1,5 @@
 # "Either" type C++
----
+===
 Example of Either type implementation that holding a value of one of two types.
 ### Semantics
 ---------
